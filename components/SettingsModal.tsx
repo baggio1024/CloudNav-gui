@@ -68,7 +68,8 @@ const SettingsModal: React.FC<SettingsModalProps> = ({
       navTitle: siteSettings?.navTitle || 'CloudNav',
       favicon: siteSettings?.favicon || '',
       cardStyle: siteSettings?.cardStyle || 'detailed',
-      passwordExpiryDays: siteSettings?.passwordExpiryDays ?? 7
+      passwordExpiryDays: siteSettings?.passwordExpiryDays ?? 7,
+      enablePinnedSites: siteSettings?.enablePinnedSites ?? true
   }));
   
   const [generatedIcons, setGeneratedIcons] = useState<string[]>([]);
@@ -102,7 +103,9 @@ const SettingsModal: React.FC<SettingsModalProps> = ({
           title: siteSettings?.title || 'CloudNav - 我的导航',
           navTitle: siteSettings?.navTitle || 'CloudNav',
           favicon: siteSettings?.favicon || '',
-          cardStyle: siteSettings?.cardStyle || 'detailed'
+          cardStyle: siteSettings?.cardStyle || 'detailed',
+          passwordExpiryDays: siteSettings?.passwordExpiryDays ?? 7,
+          enablePinnedSites: siteSettings?.enablePinnedSites ?? true
       };
       setLocalSiteSettings(safeSettings);
       if (generatedIcons.length === 0) {
@@ -913,6 +916,21 @@ document.addEventListener('DOMContentLoaded', async () => {
                                     />
                                 </div>
                                 <p className="text-xs text-slate-500 mt-1">设置为 0 表示永久不退出，默认 7 天后自动退出</p>
+                            </div>
+                            <div>
+                                <div className="flex justify-between items-center mb-1">
+                                    <label className="block text-sm font-medium text-slate-700 dark:text-slate-300">启用置顶网站功能</label>
+                                    <label className="relative inline-flex items-center cursor-pointer">
+                                        <input 
+                                            type="checkbox" 
+                                            className="sr-only peer"
+                                            checked={localSiteSettings.enablePinnedSites}
+                                            onChange={(e) => handleSiteChange('enablePinnedSites', e.target.checked)}
+                                        />
+                                        <div className="w-11 h-6 bg-slate-200 peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-blue-600 dark:peer-checked:bg-blue-500"></div>
+                                    </label>
+                                </div>
+                                <p className="text-xs text-slate-500">如果不启用，默认进入常用推荐页面</p>
                             </div>
                         </div>
                     </div>

@@ -102,9 +102,21 @@ function App() {
           navTitle: 'CloudNav',
           favicon: '',
           cardStyle: 'detailed' as const,
-          passwordExpiryDays: 7
+          passwordExpiryDays: 7,
+          enablePinnedSites: true
       };
   });
+  
+  // 初始化时根据设置决定默认分类
+  useEffect(() => {
+      if (!siteSettings.enablePinnedSites && selectedCategory === 'all') {
+          // 查找"常用推荐"分类
+          const commonCategory = categories.find(cat => cat.id === 'common');
+          if (commonCategory) {
+              setSelectedCategory(commonCategory.id);
+          }
+      }
+  }, [siteSettings.enablePinnedSites, categories, selectedCategory]);
   
   // Modals
   const [isModalOpen, setIsModalOpen] = useState(false);
@@ -1231,6 +1243,14 @@ function App() {
       if (newSiteSettings) {
           setSiteSettings(newSiteSettings);
           localStorage.setItem('cloudnav_site_settings', JSON.stringify(newSiteSettings));
+          
+          // 如果禁用了置顶功能且当前选中的是'全部'分类，切换到'常用推荐'
+          if (!newSiteSettings.enablePinnedSites && selectedCategory === 'all') {
+              const commonCategory = categories.find(cat => cat.id === 'common');
+              if (commonCategory) {
+                  setSelectedCategory(commonCategory.id);
+              }
+          }
       }
       
       if (authToken) {
@@ -2074,6 +2094,7 @@ function App() {
 
         {/* Categories List */}
         <div className="flex-1 overflow-y-auto p-4 space-y-1 scrollbar-hide">
+            {siteSettings.enablePinnedSites && (
             <button
               onClick={() => { setSelectedCategory('all'); setSidebarOpen(false); }}
               className={`w-full flex items-center gap-3 px-4 py-3 rounded-xl transition-all ${
@@ -2085,6 +2106,7 @@ function App() {
               <div className="p-1"><Icon name="LayoutGrid" size={18} /></div>
               <span>置顶网站</span>
             </button>
+            )}
             
             <div className="flex items-center justify-between pt-4 pb-2 px-4">
                <span className="text-xs font-semibold text-slate-400 uppercase tracking-wider">分类目录</span>
@@ -2414,7 +2436,7 @@ function App() {
         <div className="flex-1 overflow-y-auto p-4 lg:p-8 space-y-8">
             
             {/* 1. Pinned Area (Custom Top Area) */}
-            {pinnedLinks.length > 0 && !searchQuery && (selectedCategory === 'all') && (
+            {siteSettings.enablePinnedSites && pinnedLinks.length > 0 && !searchQuery && (selectedCategory === 'all') && (
                 <section>
                     <div className="flex items-center justify-between mb-4">
                         <div className="flex items-center gap-2">

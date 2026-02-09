@@ -23,6 +23,7 @@ export interface SiteSettings {
   favicon: string;
   cardStyle: 'detailed' | 'simple';
   passwordExpiryDays: number; // 密码过期天数，0表示永久不退出
+  enablePinnedSites: boolean; // 是否启用置顶网站功能
 }
 
 export interface AppState {
