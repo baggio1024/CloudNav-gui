@@ -556,12 +556,43 @@ function App() {
             if (res.ok) {
                 const data = await res.json();
                 if (data.links && data.links.length > 0) {
-                    setLinks(data.links);
-                    setCategories(data.categories || DEFAULT_CATEGORIES);
-                    localStorage.setItem(LOCAL_STORAGE_KEY, JSON.stringify(data));
+                    let loadedCategories = data.categories || DEFAULT_CATEGORIES;
+                    
+                    // 确保"常用推荐"分类始终存在，并确保它是第一个分类
+                    if (!loadedCategories.some(c => c.id === 'common')) {
+                        loadedCategories = [
+                            { id: 'common', name: '常用推荐', icon: 'Star' },
+                            ...loadedCategories
+                        ];
+                    } else {
+                        // 如果"常用推荐"分类已存在，确保它是第一个分类
+                        const commonIndex = loadedCategories.findIndex(c => c.id === 'common');
+                        if (commonIndex > 0) {
+                            const commonCategory = loadedCategories[commonIndex];
+                            loadedCategories = [
+                                commonCategory,
+                                ...loadedCategories.slice(0, commonIndex),
+                                ...loadedCategories.slice(commonIndex + 1)
+                            ];
+                        }
+                    }
+                    
+                    // 检查是否有链接的categoryId不存在于当前分类中，将这些链接移动到"常用推荐"
+                    const validCategoryIds = new Set(loadedCategories.map(c => c.id));
+                    let loadedLinks = data.links;
+                    loadedLinks = loadedLinks.map(link => {
+                        if (!validCategoryIds.has(link.categoryId)) {
+                            return { ...link, categoryId: 'common' };
+                        }
+                        return link;
+                    });
+                    
+                    setLinks(loadedLinks);
+                    setCategories(loadedCategories);
+                    localStorage.setItem(LOCAL_STORAGE_KEY, JSON.stringify({ links: loadedLinks, categories: loadedCategories }));
                     
                     // 加载链接图标缓存
-                    loadLinkIcons(data.links);
+                    loadLinkIcons(loadedLinks);
                     hasCloudData = true;
                 }
             } else if (res.status === 401) {
@@ -606,12 +637,27 @@ function App() {
                         navTitle: websiteConfigData.navTitle || prev.navTitle,
                         favicon: websiteConfigData.favicon || prev.favicon,
                         cardStyle: websiteConfigData.cardStyle || prev.cardStyle,
-                        passwordExpiryDays: websiteConfigData.passwordExpiryDays !== undefined ? websiteConfigData.passwordExpiryDays : prev.passwordExpiryDays
+                        passwordExpiryDays: websiteConfigData.passwordExpiryDays !== undefined ? websiteConfigData.passwordExpiryDays : prev.passwordExpiryDays,
+                        enablePinnedSites: websiteConfigData.enablePinnedSites !== undefined ? websiteConfigData.enablePinnedSites : prev.enablePinnedSites
                     }));
                 }
             }
         } catch (e) {
             console.warn("Failed to fetch configs from KV.", e);
+        }
+        
+        // 如果有云端数据，检查是否需要切换到常用推荐分类
+        if (hasCloudData) {
+            // 延迟检查，确保siteSettings和categories都已更新
+            setTimeout(() => {
+                if (!siteSettings.enablePinnedSites && selectedCategory === 'all') {
+                    // 查找"常用推荐"分类
+                    const commonCategory = categories.find(cat => cat.id === 'common');
+                    if (commonCategory) {
+                        setSelectedCategory(commonCategory.id);
+                    }
+                }
+            }, 100);
         }
         
         // 如果有云端数据，则不需要加载本地数据
