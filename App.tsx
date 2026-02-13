@@ -109,13 +109,8 @@ function App() {
   
   // 初始化时根据设置决定默认分类
   useEffect(() => {
-      if (!siteSettings.enablePinnedSites && selectedCategory === 'all') {
-          // 查找"常用推荐"分类
-          const commonCategory = categories.find(cat => cat.id === 'common');
-          if (commonCategory) {
-              setSelectedCategory(commonCategory.id);
-          }
-      }
+      // 当禁用置顶功能时，保持默认进入"全部"分类，这样用户就能看到所有链接
+      // 不再自动切换到"常用推荐"分类，避免用户看不到内容
   }, [siteSettings.enablePinnedSites, categories, selectedCategory]);
   
   // Modals
@@ -626,17 +621,11 @@ function App() {
             console.warn("Failed to fetch configs from KV.", e);
         }
         
-        // 如果有云端数据，检查是否需要切换到常用推荐分类
+        // 如果有云端数据，不再自动切换分类，保持默认的"全部"分类
         if (hasCloudData) {
-            // 延迟检查，确保siteSettings和categories都已更新
+            // 延迟检查，确保siteSettings已更新
             setTimeout(() => {
-                if (!siteSettings.enablePinnedSites && selectedCategory === 'all') {
-                    // 查找"常用推荐"分类
-                    const commonCategory = categories.find(cat => cat.id === 'common');
-                    if (commonCategory) {
-                        setSelectedCategory(commonCategory.id);
-                    }
-                }
+                // 当禁用置顶功能时，保持默认进入"全部"分类，这样用户就能看到所有链接
             }, 100);
         }
         
@@ -1270,13 +1259,8 @@ function App() {
           setSiteSettings(newSiteSettings);
           localStorage.setItem('cloudnav_site_settings', JSON.stringify(newSiteSettings));
           
-          // 如果禁用了置顶功能且当前选中的是'全部'分类，切换到'常用推荐'
-          if (!newSiteSettings.enablePinnedSites && selectedCategory === 'all') {
-              const commonCategory = categories.find(cat => cat.id === 'common');
-              if (commonCategory) {
-                  setSelectedCategory(commonCategory.id);
-              }
-          }
+          // 当禁用置顶功能时，不再自动切换到"常用推荐"分类
+          // 保持当前选中的分类，这样用户就能看到所有链接
       }
       
       if (authToken) {
@@ -1761,16 +1745,8 @@ function App() {
 
     // Category Filter
     if (selectedCategory !== 'all') {
-      if (selectedCategory === 'common') {
-        // 当选择常用推荐分类时，如果该分类为空，显示所有链接
-        const commonLinks = result.filter(l => l.categoryId === selectedCategory);
-        if (commonLinks.length > 0) {
-          result = commonLinks;
-        }
-        // 如果常用推荐分类为空，显示所有链接
-      } else {
-        result = result.filter(l => l.categoryId === selectedCategory);
-      }
+      // 无论选择哪个分类，都只显示该分类的链接
+      result = result.filter(l => l.categoryId === selectedCategory);
     }
     
     // 按照order字段排序，如果没有order字段则按创建时间排序
