@@ -1735,7 +1735,16 @@ function App() {
 
     // Category Filter
     if (selectedCategory !== 'all') {
-      result = result.filter(l => l.categoryId === selectedCategory);
+      if (selectedCategory === 'common') {
+        // 当选择常用推荐分类时，如果该分类为空，显示所有链接
+        const commonLinks = result.filter(l => l.categoryId === selectedCategory);
+        if (commonLinks.length > 0) {
+          result = commonLinks;
+        }
+        // 如果常用推荐分类为空，显示所有链接
+      } else {
+        result = result.filter(l => l.categoryId === selectedCategory);
+      }
     }
     
     // 按照order字段排序，如果没有order字段则按创建时间排序
@@ -2180,17 +2189,6 @@ function App() {
                  {syncStatus === 'error' && <AlertCircle className="w-3 h-3 text-red-500" />}
                  {authToken ? <span className="text-green-600">已同步</span> : <span className="text-amber-500">离线</span>}
                </div>
-
-               <a 
-                 href={GITHUB_REPO_URL} 
-                 target="_blank" 
-                 rel="noopener noreferrer"
-                 className="flex items-center gap-1 text-slate-400 hover:text-slate-700 dark:hover:text-slate-200 transition-colors"
-                 title="Fork this project on GitHub"
-               >
-                 <GitFork size={14} />
-                 <span>Fork 项目 v1.7.1</span>
-               </a>
             </div>
         </div>
       </aside>
