@@ -18,6 +18,19 @@ const AuthModal: React.FC<AuthModalProps> = ({ isOpen, onLogin }) => {
     setIsLoading(true);
     setError('');
     
+    // 开发环境本地验证
+    if (import.meta.env.DEV) {
+        const envPassword = import.meta.env.VITE_PASSWORD || 'admin';
+        if (password === envPassword) {
+            // 本地验证成功，直接设置认证令牌
+            localStorage.setItem('cloudnav_auth_token', password);
+            // 刷新页面
+            window.location.reload();
+            return;
+        }
+    }
+    
+    // 生产环境API验证
     const success = await onLogin(password);
     if (!success) {
       setError('密码错误或无法连接服务器');
