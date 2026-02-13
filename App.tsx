@@ -194,23 +194,13 @@ function App() {
         let loadedCategories = parsed.categories || DEFAULT_CATEGORIES;
         
         // 确保"常用推荐"分类始终存在，并确保它是第一个分类
-        if (!loadedCategories.some(c => c.id === 'common')) {
-          loadedCategories = [
+        // 首先移除可能存在的重复"常用推荐"分类
+        loadedCategories = loadedCategories.filter(c => c.id !== 'common');
+        // 然后添加一个新的"常用推荐"分类作为第一个分类
+        loadedCategories = [
             { id: 'common', name: '常用推荐', icon: 'Star' },
             ...loadedCategories
-          ];
-        } else {
-          // 如果"常用推荐"分类已存在，确保它是第一个分类
-          const commonIndex = loadedCategories.findIndex(c => c.id === 'common');
-          if (commonIndex > 0) {
-            const commonCategory = loadedCategories[commonIndex];
-            loadedCategories = [
-              commonCategory,
-              ...loadedCategories.slice(0, commonIndex),
-              ...loadedCategories.slice(commonIndex + 1)
-            ];
-          }
-        }
+        ];
         
         // 检查是否有链接的categoryId不存在于当前分类中，将这些链接移动到"常用推荐"
         const validCategoryIds = new Set(loadedCategories.map(c => c.id));
@@ -559,23 +549,13 @@ function App() {
                     let loadedCategories = data.categories || DEFAULT_CATEGORIES;
                     
                     // 确保"常用推荐"分类始终存在，并确保它是第一个分类
-                    if (!loadedCategories.some(c => c.id === 'common')) {
-                        loadedCategories = [
-                            { id: 'common', name: '常用推荐', icon: 'Star' },
-                            ...loadedCategories
-                        ];
-                    } else {
-                        // 如果"常用推荐"分类已存在，确保它是第一个分类
-                        const commonIndex = loadedCategories.findIndex(c => c.id === 'common');
-                        if (commonIndex > 0) {
-                            const commonCategory = loadedCategories[commonIndex];
-                            loadedCategories = [
-                                commonCategory,
-                                ...loadedCategories.slice(0, commonIndex),
-                                ...loadedCategories.slice(commonIndex + 1)
-                            ];
-                        }
-                    }
+                    // 首先移除可能存在的重复"常用推荐"分类
+                    loadedCategories = loadedCategories.filter(c => c.id !== 'common');
+                    // 然后添加一个新的"常用推荐"分类作为第一个分类
+                    loadedCategories = [
+                        { id: 'common', name: '常用推荐', icon: 'Star' },
+                        ...loadedCategories
+                    ];
                     
                     // 检查是否有链接的categoryId不存在于当前分类中，将这些链接移动到"常用推荐"
                     const validCategoryIds = new Set(loadedCategories.map(c => c.id));
