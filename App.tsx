@@ -103,7 +103,7 @@ function App() {
           favicon: '',
           cardStyle: 'detailed' as const,
           passwordExpiryDays: 7,
-          enablePinnedSites: true
+          enablePinnedSites: false
       };
   });
   

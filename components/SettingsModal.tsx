@@ -64,12 +64,12 @@ const SettingsModal: React.FC<SettingsModalProps> = ({
   const [localConfig, setLocalConfig] = useState<AIConfig>(config);
   
   const [localSiteSettings, setLocalSiteSettings] = useState<SiteSettings>(() => ({
-      title: siteSettings?.title || 'CloudNav - 我的导航',
-      navTitle: siteSettings?.navTitle || 'CloudNav',
-      favicon: siteSettings?.favicon || '',
-      cardStyle: siteSettings?.cardStyle || 'detailed',
-      passwordExpiryDays: siteSettings?.passwordExpiryDays ?? 7,
-      enablePinnedSites: siteSettings?.enablePinnedSites ?? true
+    title: siteSettings?.title || 'CloudNav - 我的导航',
+    navTitle: siteSettings?.navTitle || 'CloudNav',
+    favicon: siteSettings?.favicon || '',
+    cardStyle: siteSettings?.cardStyle || 'detailed',
+    passwordExpiryDays: siteSettings?.passwordExpiryDays ?? 7,
+    enablePinnedSites: siteSettings?.enablePinnedSites ?? false
   }));
   
   const [generatedIcons, setGeneratedIcons] = useState<string[]>([]);
@@ -105,7 +105,7 @@ const SettingsModal: React.FC<SettingsModalProps> = ({
           favicon: siteSettings?.favicon || '',
           cardStyle: siteSettings?.cardStyle || 'detailed',
           passwordExpiryDays: siteSettings?.passwordExpiryDays ?? 7,
-          enablePinnedSites: siteSettings?.enablePinnedSites ?? true
+          enablePinnedSites: siteSettings?.enablePinnedSites ?? false
       };
       setLocalSiteSettings(safeSettings);
       if (generatedIcons.length === 0) {
