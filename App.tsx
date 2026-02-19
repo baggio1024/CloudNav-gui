@@ -148,6 +148,7 @@ function App() {
           heads.appendChild(link);
         }
         link.href = url;
+        link.setAttribute('sizes', '64x64');
         // 如果是 SVG (如随机生成的图标)，设置正确的 type
         if (url.startsWith('data:image/svg+xml')) {
           link.type = 'image/svg+xml';

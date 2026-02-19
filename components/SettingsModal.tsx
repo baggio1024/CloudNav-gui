@@ -40,7 +40,7 @@ const generateSvgIcon = (text: string, color1: string, color2: string) => {
     const gradientId = 'g_' + Math.random().toString(36).substr(2, 9);
 
     const svg = `
-    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 64">
+    <svg xmlns="http://www.w3.org/2000/svg" width="64" height="64" viewBox="0 0 64 64">
         <defs>
             <linearGradient id="${gradientId}" x1="0" y1="0" x2="1" y2="1">
                 <stop offset="0%" stop-color="${color1}"/>
