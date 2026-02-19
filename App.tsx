@@ -125,6 +125,45 @@ function App() {
   const currentTheme = useMemo(() => getThemeConfig(siteSettings.displayTheme || 'default'), [siteSettings.displayTheme]);
 
 
+  // 监听 siteSettings 变化，同步更新网页标题和图标
+  useEffect(() => {
+    if (siteSettings.title) {
+      document.title = siteSettings.title;
+    }
+
+    // 自动注入网站图标到 head
+    const updateHeaderIcon = (url: string) => {
+      if (!url) return;
+
+      // 更新核心图标类型
+      const iconTypes = ['rel="icon"', 'rel="shortcut icon"', 'rel="apple-touch-icon"'];
+      const heads = document.getElementsByTagName('head')[0];
+
+      iconTypes.forEach(relStr => {
+        let link: HTMLLinkElement | null = document.querySelector(`link[${relStr}]`);
+        if (!link) {
+          link = document.createElement('link');
+          const rel = relStr.replace('rel="', '').replace('"', '');
+          link.rel = rel;
+          heads.appendChild(link);
+        }
+        link.href = url;
+        // 如果是 SVG (如随机生成的图标)，设置正确的 type
+        if (url.startsWith('data:image/svg+xml')) {
+          link.type = 'image/svg+xml';
+        } else if (url.endsWith('.ico')) {
+          link.type = 'image/x-icon';
+        } else if (url.endsWith('.png')) {
+          link.type = 'image/png';
+        }
+      });
+    };
+
+    if (siteSettings.favicon) {
+      updateHeaderIcon(siteSettings.favicon);
+    }
+  }, [siteSettings.title, siteSettings.favicon]);
+
   // 初始化时根据设置决定默认分类
   useEffect(() => {
     if (!siteSettings.enablePinnedSites && selectedCategory === 'all') {
@@ -2137,7 +2176,10 @@ function App() {
         `}
           >
             {/* Logo */}
-            <div className="h-16 flex items-center px-6 border-b border-slate-100 dark:border-slate-700 shrink-0">
+            <div className="h-16 flex items-center gap-3 px-6 border-b border-slate-100 dark:border-slate-700 shrink-0">
+              {siteSettings.favicon && (
+                <img src={siteSettings.favicon} alt="" className="w-8 h-8 rounded-lg object-contain" />
+              )}
               <span className={`text-xl font-bold bg-gradient-to-r ${currentTheme.gradient.from} ${currentTheme.gradient.to} bg-clip-text text-transparent`}>
                 {siteSettings.navTitle || 'CloudNav'}
               </span>
