@@ -8,6 +8,7 @@ export interface LinkItem {
   createdAt: number;
   pinned?: boolean; // New field for pinning
   pinnedOrder?: number; // Field for pinned link sorting order
+  order?: number; // 链接在分类中的排序位置
 }
 
 export interface Category {
@@ -17,6 +18,9 @@ export interface Category {
   password?: string; // Optional password for category protection
 }
 
+// 显示风格主题类型
+export type DisplayTheme = 'default' | 'ocean-depths' | 'sunset-boulevard' | 'tech-innovation' | 'midnight-galaxy' | 'forest-canopy' | 'desert-rose' | 'cyberpunk-neon' | 'minimalist-white' | 'luxury-gold';
+
 export interface SiteSettings {
   title: string;
   navTitle: string;
@@ -24,6 +28,8 @@ export interface SiteSettings {
   cardStyle: 'detailed' | 'simple';
   passwordExpiryDays: number; // 密码过期天数，0表示永久不退出
   enablePinnedSites: boolean; // 是否启用置顶网站功能
+  displayTheme: DisplayTheme; // 显示风格主题
+  faviconApi: string; // 图标获取接口
 }
 
 export interface AppState {
@@ -82,11 +88,10 @@ export const DEFAULT_CATEGORIES: Category[] = [
   { id: 'ent', name: '休闲娱乐', icon: 'Gamepad2' },
   { id: 'ai', name: '人工智能', icon: 'Bot' },
 ];
-
 export const INITIAL_LINKS: LinkItem[] = [
-  { id: '1', title: 'GitHub', url: 'https://github.com', categoryId: 'dev', createdAt: Date.now(), description: '代码托管平台', pinned: true, icon: 'https://www.faviconextractor.com/favicon/github.com?larger=true' },
-  { id: '2', title: 'React', url: 'https://react.dev', categoryId: 'dev', createdAt: Date.now(), description: '构建Web用户界面的库', pinned: true, icon: 'https://www.faviconextractor.com/favicon/react.dev?larger=true' },
-  { id: '3', title: 'Tailwind CSS', url: 'https://tailwindcss.com', categoryId: 'design', createdAt: Date.now(), description: '原子化CSS框架', pinned: true, icon: 'https://www.faviconextractor.com/favicon/tailwindcss.com?larger=true' },
-  { id: '4', title: 'ChatGPT', url: 'https://chat.openai.com', categoryId: 'ai', createdAt: Date.now(), description: 'OpenAI聊天机器人', pinned: true, icon: 'https://www.faviconextractor.com/favicon/chat.openai.com?larger=true' },
-  { id: '5', title: 'Gemini', url: 'https://gemini.google.com', categoryId: 'ai', createdAt: Date.now(), description: 'Google DeepMind AI', pinned: true, icon: 'https://www.faviconextractor.com/favicon/gemini.google.com?larger=true' },
+  { id: '1', title: 'GitHub', url: 'https://github.com', categoryId: 'dev', createdAt: Date.now(), description: '代码托管平台', pinned: true, icon: '' },
+  { id: '2', title: 'React', url: 'https://react.dev', categoryId: 'dev', createdAt: Date.now(), description: '构建Web用户界面的库', pinned: true, icon: '' },
+  { id: '3', title: 'Tailwind CSS', url: 'https://tailwindcss.com', categoryId: 'design', createdAt: Date.now(), description: '原子化CSS框架', pinned: true, icon: '' },
+  { id: '4', title: 'ChatGPT', url: 'https://chat.openai.com', categoryId: 'ai', createdAt: Date.now(), description: 'OpenAI聊天机器人', pinned: true, icon: '' },
+  { id: '5', title: 'Gemini', url: 'https://gemini.google.com', categoryId: 'ai', createdAt: Date.now(), description: 'Google DeepMind AI', pinned: true, icon: '' },
 ];
