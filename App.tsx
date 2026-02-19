@@ -139,9 +139,8 @@ function App() {
       const rels = ['icon', 'shortcut icon', 'apple-touch-icon'];
       const heads = document.getElementsByTagName('head')[0];
 
-      // 使用标准的 /favicon.ico 路径，并附加校验参数（防止缓存）
-      const ver = encodeURIComponent(url.slice(-10) + url.length);
-      const iconPath = `/favicon.ico?v=${ver}`;
+      // 使用相对路径 /favicon.ico
+      const iconPath = '/favicon.ico';
 
       rels.forEach(rel => {
         const existing = document.querySelectorAll(`link[rel="${rel}"], link[rel='${rel}']`);
@@ -162,8 +161,48 @@ function App() {
 
         heads.appendChild(link);
       });
+
+      // 将用户设置的 favicon 发送到 /api/favicon 端点（仅开发环境）
+      if (import.meta.env.DEV && url !== '/favicon.ico') {
+        fetch('/api/favicon', {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json'
+          },
+          body: JSON.stringify({ favicon: url })
+        }).catch(err => console.error('Failed to send favicon to API:', err));
+      }
     };
 
+    // 自动生成默认 favicon（如果未设置）
+    const generateDefaultFavicon = () => {
+      // 检查是否已经有 favicon 设置
+      if (siteSettings.favicon) return;
+
+      // 使用相对路径 /favicon.ico 作为默认 favicon
+      const defaultFavicon = '/favicon.ico';
+
+      // 更新 siteSettings 中的 favicon
+      setSiteSettings(prev => ({
+        ...prev,
+        favicon: defaultFavicon
+      }));
+
+      // 同时更新本地存储
+      const updatedSettings = {
+        ...siteSettings,
+        favicon: defaultFavicon
+      };
+      localStorage.setItem('cloudnav_site_settings', JSON.stringify(updatedSettings));
+
+      // 更新页面图标
+      updateHeaderIcon(defaultFavicon);
+    };
+
+    // 执行默认 favicon 生成
+    generateDefaultFavicon();
+
+    // 如果已经设置了 favicon，则更新页面图标
     if (siteSettings.favicon) {
       updateHeaderIcon(siteSettings.favicon);
     }
@@ -826,25 +865,6 @@ function App() {
 
     initData();
   }, []);
-
-  // Update page title and favicon when site settings change
-  useEffect(() => {
-    if (siteSettings.title) {
-      document.title = siteSettings.title;
-    }
-
-    if (siteSettings.favicon) {
-      // Remove existing favicon links
-      const existingFavicons = document.querySelectorAll('link[rel="icon"]');
-      existingFavicons.forEach(favicon => favicon.remove());
-
-      // Add new favicon
-      const favicon = document.createElement('link');
-      favicon.rel = 'icon';
-      favicon.href = siteSettings.favicon;
-      document.head.appendChild(favicon);
-    }
-  }, [siteSettings.title, siteSettings.favicon]);
 
   const toggleTheme = () => {
     const newMode = !darkMode;
@@ -2083,16 +2103,15 @@ function App() {
 
         {/* Hover Actions (Absolute Right) - 在批量编辑模式下隐藏 */}
         {!isBatchEditMode && (
-          <div className={`flex items-center justify-center gap-1 opacity-0 group-hover:opacity-100 transition-opacity bg-blue-50 dark:bg-blue-900/20 backdrop-blur-sm rounded-md p-1 absolute ${isDetailedView ? 'top-3 right-3' : 'top-1/2 -translate-y-1/2 right-2'
+          <div className={`flex items-center justify-center gap-1 opacity-0 group-hover:opacity-100 transition-opacity rounded-md p-0 absolute ${isDetailedView ? 'top-3 right-3' : 'top-1/2 -translate-y-1/2 right-2'
             }`}>
             <button
               onClick={(e) => { e.preventDefault(); e.stopPropagation(); setEditingLink(link); setIsModalOpen(true); }}
-              className="relative p-1 text-slate-400 hover:text-blue-500 hover:bg-slate-100 dark:hover:bg-slate-700 rounded-md group/edit"
+              className="p-1 text-slate-400 hover:text-blue-500 hover:bg-slate-100 dark:hover:bg-slate-700 rounded-md"
               title="编辑"
             >
-              <div className="absolute inset-0 bg-blue-500/10 rounded-md blur-[1px] opacity-0 group-hover/edit:opacity-100 transition-opacity" />
-              <svg className="relative" width="18" height="18" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
-                <path d="M12 15.5A3.5 3.5 0 0 1 8.5 12A3.5 3.5 0 0 1 12 8.5a3.5 3.5 0 0 1 3.5 3.5a3.5 3.5 0 0 1-3.5 3.5m7.43-2.53c.04-.32.07-.64.07-.97c0-.33-.03-.65-.07-.97l2.11-1.63c.19-.15.24-.42.12-.64l-2-3.46c-.12-.22-.39-.3-.61-.22l-2.49 1c-.52-.39-1.06-.73-1.69-.98l-.37-2.65A.506.506 0 0 0 14 2h-4c-.25 0-.46.18-.5.42l-.37 2.65c-.63.25-1.17.59-1.69.98l-2.49-1c-.22-.08-.49 0-.61.22l-2 3.46c-.13.22-.07.49.12.64L4.57 11c-.04.32-.07.64-.07.97c0 .33.03.65.07.97l-2.11 1.63c-.19.15-.24.42-.12.64l2 3.46c.12.22.39.3.61.22l2.49-1c.52.39 1.06.73 1.69.98l.37 2.65c.04.24.25.42.5.42h4c.25 0 .46-.18.5-.42l.37-2.65c.63-.25 1.17-.59 1.69-.98l2.49 1c.22.08.49 0 .61-.22l2-3.46c.13-.22.07-.49-.12-.64l-2.11-1.63Z" fill="currentColor" />
+              <svg width="18" height="18" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+                <path d="M12 15.5A3.5 3.5 0 0 1 8.5 12A3.5 3.5 0 0 1 12 8.5a3.5 3.5 0 0 1 3.5 3.5a3.5 3.5 0 0 1-3.5 3.5m7.43-2.53c.04-.32.07-.64.07-.97c0-.33-.03-.65-.07-.97l2.11-1.63c.19-.15.24-.42.12-.64l-2-3.46c-.12-.22-.39-.3-.61-.22l-2.49 1c-.52-.39-1.06-.73-1.69-.98l-.37 2.65A.506.506 0 0 0 14 2h-4c-.25 0-.46.18-.5.42l-.37 2.65c-.63.25-1.17.59-1.69.98l-2.49-1c-.22-.08-.49 0-.61.22l-2 3.46c-.13.22-.07.49.12.64L4.57 11c-.04.32-.07.64-.07.97c0 .33.03.65.07.97l-2.11 1.63c-.19.15-.24.42-.12.64l2 3.46c.12.22.39.3.61.22l2.49-1c.52.39 1.06.73 1.69.98l.37 2.65c.04.24.25.42.5.42h4c.25 0 .46-.18.5-.42l.37-2.65c.63-.25 1.17-.59 1.69-.98l2.49 1c.22.08.49 0 .61-.22l2-3.46c.13-.22.07-.49-.12-.64l-2.11-1.63Z" fill="currentColor" />
               </svg>
             </button>
           </div>
