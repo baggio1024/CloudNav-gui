@@ -136,27 +136,31 @@ function App() {
       if (!url) return;
 
       // 更新核心图标类型
-      const iconTypes = ['rel="icon"', 'rel="shortcut icon"', 'rel="apple-touch-icon"'];
+      const rels = ['icon', 'shortcut icon', 'apple-touch-icon'];
       const heads = document.getElementsByTagName('head')[0];
 
-      iconTypes.forEach(relStr => {
-        let link: HTMLLinkElement | null = document.querySelector(`link[${relStr}]`);
-        if (!link) {
-          link = document.createElement('link');
-          const rel = relStr.replace('rel="', '').replace('"', '');
-          link.rel = rel;
-          heads.appendChild(link);
-        }
-        link.href = url;
+      // 使用标准的 /favicon.ico 路径，并附加校验参数（防止缓存）
+      const ver = encodeURIComponent(url.slice(-10) + url.length);
+      const iconPath = `/favicon.ico?v=${ver}`;
+
+      rels.forEach(rel => {
+        const existing = document.querySelectorAll(`link[rel="${rel}"], link[rel='${rel}']`);
+        existing.forEach(el => el.remove());
+        const link = document.createElement('link');
+        link.rel = rel;
+        link.href = iconPath;
         link.setAttribute('sizes', '64x64');
-        // 如果是 SVG (如随机生成的图标)，设置正确的 type
+
+        // 保持 type 类型正确识别
         if (url.startsWith('data:image/svg+xml')) {
           link.type = 'image/svg+xml';
-        } else if (url.endsWith('.ico')) {
-          link.type = 'image/x-icon';
-        } else if (url.endsWith('.png')) {
+        } else if (url.endsWith('.png') || url.includes('image/png')) {
           link.type = 'image/png';
+        } else {
+          link.type = 'image/x-icon';
         }
+
+        heads.appendChild(link);
       });
     };
 
@@ -1178,21 +1182,22 @@ function App() {
 
   // 拖拽结束事件处理函数
   const handleDragEnd = (event: DragEndEvent) => {
-    const { active, over } = event;
+    const activeId = event.active.id;
+    const overId = event.over?.id;
 
-    if (over && (active as any).id !== (over as any).id) {
+    if (overId && activeId !== overId) {
       // 获取当前分类下的所有链接
-      const categoryLinks = links.filter(link =>
+      const categoryLinks = (links.filter(link =>
         selectedCategory === 'all' || link.categoryId === selectedCategory
-      );
+      ) as LinkItem[]);
 
       // 找到被拖拽元素和目标元素的索引
-      const activeIndex = categoryLinks.findIndex(link => link.id === (active as any).id);
-      const overIndex = categoryLinks.findIndex(link => link.id === (over as any).id);
+      const activeIndex = categoryLinks.findIndex(link => link.id === activeId);
+      const overIndex = categoryLinks.findIndex(link => link.id === overId);
 
       if (activeIndex !== -1 && overIndex !== -1) {
         // 重新排序当前分类的链接
-        const reorderedCategoryLinks = arrayMove(categoryLinks, activeIndex, overIndex);
+        const reorderedCategoryLinks = arrayMove(categoryLinks, activeIndex, overIndex) as LinkItem[];
 
         // 更新所有链接的顺序
         const updatedLinks = links.map(link => {
@@ -1213,19 +1218,20 @@ function App() {
 
   // 置顶链接拖拽结束事件处理函数
   const handlePinnedDragEnd = (event: DragEndEvent) => {
-    const { active, over } = event;
+    const activeId = event.active.id;
+    const overId = event.over?.id;
 
-    if (over && (active as any).id !== (over as any).id) {
+    if (overId && activeId !== overId) {
       // 获取所有置顶链接
-      const pinnedLinksList = links.filter(link => link.pinned);
+      const pinnedLinksList = links.filter(link => link.pinned) as LinkItem[];
 
       // 找到被拖拽元素和目标元素的索引
-      const activeIndex = pinnedLinksList.findIndex(link => link.id === (active as any).id);
-      const overIndex = pinnedLinksList.findIndex(link => link.id === (over as any).id);
+      const activeIndex = pinnedLinksList.findIndex(link => link.id === activeId);
+      const overIndex = pinnedLinksList.findIndex(link => link.id === overId);
 
       if (activeIndex !== -1 && overIndex !== -1) {
         // 重新排序置顶链接
-        const reorderedPinnedLinks = arrayMove(pinnedLinksList, activeIndex, overIndex);
+        const reorderedPinnedLinks = arrayMove(pinnedLinksList, activeIndex, overIndex) as LinkItem[];
 
         // 创建一个映射，存储每个置顶链接的新pinnedOrder
         const pinnedOrderMap = new Map<string, number>();
@@ -1949,9 +1955,15 @@ function App() {
           <div className={`flex items-center gap-3 mb-2 ${isDetailedView ? '' : 'w-full'
             }`}>
             {/* Icon */}
-            <div className={`${currentTheme.iconContainer.textColor} ${currentTheme.iconContainer.darkTextColor} flex items-center justify-center text-sm font-bold uppercase shrink-0 ${isDetailedView ? `w-8 h-8 rounded-xl ${currentTheme.iconContainer.bg} ${currentTheme.iconContainer.darkBg}` : `w-8 h-8 rounded-lg ${currentTheme.iconContainer.bg} ${currentTheme.iconContainer.darkBg}`
-              }`}>
-              {link.icon ? <img src={link.icon} alt="" className="w-5 h-5" /> : link.title.charAt(0)}
+            <div className="relative">
+              <div className={`absolute -inset-[1px] bg-gradient-to-tr ${currentTheme.gradient.from}/30 ${currentTheme.gradient.to}/30 rounded-xl blur-[1px] opacity-0 group-hover:opacity-100 transition-opacity duration-300`} />
+              <div className={`relative flex items-center justify-center shrink-0 overflow-hidden w-10 h-10 rounded-xl shadow-sm border border-slate-200/50 dark:border-slate-700/50 ${!link.icon ? `bg-white dark:bg-slate-800 ${currentTheme.iconContainer.textColor} ${currentTheme.iconContainer.darkTextColor} text-lg font-bold uppercase` : ''}`}>
+                {link.icon ? (
+                  <img src={link.icon} alt="" className="w-full h-full object-cover" />
+                ) : (
+                  link.title.charAt(0)
+                )}
+              </div>
             </div>
 
             {/* 标题 */}
@@ -1998,9 +2010,16 @@ function App() {
             {/* 第一行：图标和标题水平排列 */}
             <div className={`flex items-center gap-3 w-full`}>
               {/* Icon */}
-              <div className={`${currentTheme.iconContainer.textColor} ${currentTheme.iconContainer.darkTextColor} flex items-center justify-center text-sm font-bold uppercase shrink-0 ${isDetailedView ? `w-8 h-8 rounded-xl ${currentTheme.iconContainer.bg} ${currentTheme.iconContainer.darkBg}` : `w-8 h-8 rounded-lg ${currentTheme.iconContainer.bg} ${currentTheme.iconContainer.darkBg}`
-                }`}>
-                {link.icon ? <img src={link.icon} alt="" className="w-5 h-5" /> : link.title.charAt(0)}
+              {/* Icon */}
+              <div className="relative">
+                <div className={`absolute -inset-[1px] bg-gradient-to-tr ${currentTheme.gradient.from}/30 ${currentTheme.gradient.to}/30 rounded-xl blur-[1px] opacity-0 group-hover:opacity-100 transition-opacity duration-300`} />
+                <div className={`relative flex items-center justify-center shrink-0 overflow-hidden w-10 h-10 rounded-xl shadow-sm border border-slate-200/50 dark:border-slate-700/50 ${!link.icon ? `bg-white dark:bg-slate-800 ${currentTheme.iconContainer.textColor} ${currentTheme.iconContainer.darkTextColor} text-lg font-bold uppercase` : ''}`}>
+                  {link.icon ? (
+                    <img src={link.icon} alt="" className="w-full h-full object-cover" />
+                  ) : (
+                    link.title.charAt(0)
+                  )}
+                </div>
               </div>
 
               {/* 标题 */}
@@ -2029,9 +2048,16 @@ function App() {
             {/* 第一行：图标和标题水平排列 */}
             <div className={`flex items-center gap-3 w-full`}>
               {/* Icon */}
-              <div className={`${currentTheme.iconContainer.textColor} ${currentTheme.iconContainer.darkTextColor} flex items-center justify-center text-sm font-bold uppercase shrink-0 ${isDetailedView ? `w-8 h-8 rounded-xl ${currentTheme.iconContainer.bg} ${currentTheme.iconContainer.darkBg}` : `w-8 h-8 rounded-lg ${currentTheme.iconContainer.bg} ${currentTheme.iconContainer.darkBg}`
-                }`}>
-                {link.icon ? <img src={link.icon} alt="" className="w-5 h-5" /> : link.title.charAt(0)}
+              {/* Icon */}
+              <div className="relative">
+                <div className={`absolute -inset-[1px] bg-gradient-to-tr ${currentTheme.gradient.from}/30 ${currentTheme.gradient.to}/30 rounded-xl blur-[1px] opacity-0 group-hover:opacity-100 transition-opacity duration-300`} />
+                <div className={`relative flex items-center justify-center shrink-0 overflow-hidden w-10 h-10 rounded-xl shadow-sm border border-slate-200/50 dark:border-slate-700/50 ${!link.icon ? `bg-white dark:bg-slate-800 ${currentTheme.iconContainer.textColor} ${currentTheme.iconContainer.darkTextColor} text-lg font-bold uppercase` : ''}`}>
+                  {link.icon ? (
+                    <img src={link.icon} alt="" className="w-full h-full object-cover" />
+                  ) : (
+                    link.title.charAt(0)
+                  )}
+                </div>
               </div>
 
               {/* 标题 */}
@@ -2061,10 +2087,11 @@ function App() {
             }`}>
             <button
               onClick={(e) => { e.preventDefault(); e.stopPropagation(); setEditingLink(link); setIsModalOpen(true); }}
-              className="p-1 text-slate-400 hover:text-blue-500 hover:bg-slate-100 dark:hover:bg-slate-700 rounded-md"
+              className="relative p-1 text-slate-400 hover:text-blue-500 hover:bg-slate-100 dark:hover:bg-slate-700 rounded-md group/edit"
               title="编辑"
             >
-              <svg width="18" height="18" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+              <div className="absolute inset-0 bg-blue-500/10 rounded-md blur-[1px] opacity-0 group-hover/edit:opacity-100 transition-opacity" />
+              <svg className="relative" width="18" height="18" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
                 <path d="M12 15.5A3.5 3.5 0 0 1 8.5 12A3.5 3.5 0 0 1 12 8.5a3.5 3.5 0 0 1 3.5 3.5a3.5 3.5 0 0 1-3.5 3.5m7.43-2.53c.04-.32.07-.64.07-.97c0-.33-.03-.65-.07-.97l2.11-1.63c.19-.15.24-.42.12-.64l-2-3.46c-.12-.22-.39-.3-.61-.22l-2.49 1c-.52-.39-1.06-.73-1.69-.98l-.37-2.65A.506.506 0 0 0 14 2h-4c-.25 0-.46.18-.5.42l-.37 2.65c-.63.25-1.17.59-1.69.98l-2.49-1c-.22-.08-.49 0-.61.22l-2 3.46c-.13.22-.07.49.12.64L4.57 11c-.04.32-.07.64-.07.97c0 .33.03.65.07.97l-2.11 1.63c-.19.15-.24.42-.12.64l2 3.46c.12.22.39.3.61.22l2.49-1c.52.39 1.06.73 1.69.98l.37 2.65c.04.24.25.42.5.42h4c.25 0 .46-.18.5-.42l.37-2.65c.63-.25 1.17-.59 1.69-.98l2.49 1c.22.08.49 0 .61-.22l2-3.46c.13-.22.07-.49-.12-.64l-2.11-1.63Z" fill="currentColor" />
               </svg>
             </button>
@@ -2177,13 +2204,25 @@ function App() {
         `}
           >
             {/* Logo */}
-            <div className="h-16 flex items-center gap-3 px-6 border-b border-slate-100 dark:border-slate-700 shrink-0">
-              {siteSettings.favicon && (
-                <img src={siteSettings.favicon} alt="" className="w-8 h-8 rounded-lg object-contain" />
+            <div className="h-20 flex items-center gap-4 px-6 border-b border-slate-100 dark:border-slate-700/50 shrink-0">
+              {siteSettings.favicon ? (
+                <div className="relative group/logo">
+                  <div className="absolute -inset-[1px] bg-gradient-to-tr from-blue-500/30 to-purple-500/30 rounded-xl blur-[1px] opacity-0 group-hover/logo:opacity-100 transition-opacity" />
+                  <img src={siteSettings.favicon} alt="" className="relative w-10 h-10 rounded-xl shadow-sm border border-slate-200/50 dark:border-slate-600/50 object-cover bg-white dark:bg-slate-700" />
+                </div>
+              ) : (
+                <div className={`w-10 h-10 rounded-xl bg-gradient-to-br ${currentTheme.gradient.from} ${currentTheme.gradient.to} flex items-center justify-center text-white shadow-lg`}>
+                  <Icon name="Compass" size={20} />
+                </div>
               )}
-              <span className={`text-xl font-bold bg-gradient-to-r ${currentTheme.gradient.from} ${currentTheme.gradient.to} bg-clip-text text-transparent`}>
-                {siteSettings.navTitle || 'CloudNav'}
-              </span>
+              <div className="flex flex-col">
+                <span className={`text-xl font-extrabold bg-gradient-to-r ${currentTheme.gradient.from} ${currentTheme.gradient.to} bg-clip-text text-transparent tracking-tight`}>
+                  {siteSettings.navTitle || 'CloudNav'}
+                </span>
+                <span className="text-[10px] text-slate-400 dark:text-slate-500 font-medium uppercase tracking-[0.2em] -mt-1">
+                  Private Navigator
+                </span>
+              </div>
             </div>
 
             {/* Categories List */}

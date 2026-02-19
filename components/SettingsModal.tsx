@@ -18,12 +18,18 @@ interface SettingsModalProps {
 }
 
 const getRandomColor = () => {
-    // 排除红色和深粉色区域 (0-20 和 300-360)
-    // 使用 20 到 300 之间的色相，涵盖橙、黄、绿、青、蓝、紫
-    const h = 20 + Math.floor(Math.random() * 280);
-    const s = 65 + Math.random() * 20;
-    const l = 45 + Math.random() * 15;
-    return `hsl(${h}, ${s}%, ${l}%)`;
+    const premiumColors = [
+        'hsl(217, 91%, 60%)',  // Blue
+        'hsl(250, 89%, 65%)',  // Indigo
+        'hsl(280, 87%, 65%)',  // Purple
+        'hsl(320, 83%, 65%)',  // Pink
+        'hsl(199, 89%, 48%)',  // Sky
+        'hsl(162, 82%, 40%)',  // Emerald
+        'hsl(142, 76%, 45%)',  // Green
+        'hsl(45, 93%, 47%)',   // Amber
+        'hsl(25, 95%, 53%)',   // Orange
+    ];
+    return premiumColors[Math.floor(Math.random() * premiumColors.length)];
 };
 
 const generateSvgIcon = (text: string, color1: string, color2: string) => {
@@ -38,6 +44,7 @@ const generateSvgIcon = (text: string, color1: string, color2: string) => {
     }
 
     const gradientId = 'g_' + Math.random().toString(36).substr(2, 9);
+    const filterId = 'f_' + Math.random().toString(36).substr(2, 9);
 
     const svg = `
     <svg xmlns="http://www.w3.org/2000/svg" width="64" height="64" viewBox="0 0 64 64">
@@ -46,19 +53,33 @@ const generateSvgIcon = (text: string, color1: string, color2: string) => {
                 <stop offset="0%" stop-color="${color1}"/>
                 <stop offset="100%" stop-color="${color2}"/>
             </linearGradient>
+            <filter id="${filterId}" x="-20%" y="-20%" width="140%" height="140%">
+                <feGaussianBlur in="SourceAlpha" stdDeviation="1" result="blur"/>
+                <feOffset in="blur" dx="0" dy="1" result="offsetBlur"/>
+                <feComponentTransfer in="offsetBlur">
+                    <feFuncA type="linear" slope="0.3"/>
+                </feComponentTransfer>
+                <feMerge>
+                    <feMergeNode/>
+                    <feMergeNode in="SourceGraphic"/>
+                </feMerge>
+            </filter>
         </defs>
-        <rect width="100%" height="100%" fill="url(#${gradientId})" rx="16"/>
+        <rect width="100%" height="100%" fill="url(#${gradientId})" rx="18"/>
+        <!-- 玻璃质感内边框 -->
+        <rect x="2" y="2" width="60" height="60" fill="none" stroke="white" stroke-width="1.5" stroke-opacity="0.2" rx="16"/>
         <text 
             x="50%" 
-            y="48%" 
+            y="52%" 
             dy=".32em" 
             fill="white" 
             font-family="'Arial Narrow', sans-serif-condensed, Impact, sans-serif" 
             font-weight="bold" 
             font-size="32" 
             text-anchor="middle"
-            transform="scale(0.8, 1.2)"
-            transform-origin="center"
+            filter="url(#${filterId})"
+            transform="scale(0.85, 1.15)"
+            style="transform-origin: center; transform-box: fill-box;"
         >${char}</text>
     </svg>`.trim();
 
