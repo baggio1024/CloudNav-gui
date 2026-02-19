@@ -18,8 +18,10 @@ interface SettingsModalProps {
 }
 
 const getRandomColor = () => {
-    const h = Math.floor(Math.random() * 360);
-    const s = 70 + Math.random() * 20;
+    // 排除红色和深粉色区域 (0-20 和 300-360)
+    // 使用 20 到 300 之间的色相，涵盖橙、黄、绿、青、蓝、紫
+    const h = 20 + Math.floor(Math.random() * 280);
+    const s = 65 + Math.random() * 20;
     const l = 45 + Math.random() * 15;
     return `hsl(${h}, ${s}%, ${l}%)`;
 };
@@ -29,10 +31,10 @@ const generateSvgIcon = (text: string, color1: string, color2: string) => {
     if (text && text.length > 0) {
         char = text.charAt(0);
         if (/^[a-zA-Z]$/.test(char)) {
-            char = '云';
+            char = 'Nav';
         }
     } else {
-        char = '云';
+        char = 'Nav';
     }
 
     const gradientId = 'g_' + Math.random().toString(36).substr(2, 9);
@@ -46,7 +48,18 @@ const generateSvgIcon = (text: string, color1: string, color2: string) => {
             </linearGradient>
         </defs>
         <rect width="100%" height="100%" fill="url(#${gradientId})" rx="16"/>
-        <text x="50%" y="50%" dy=".35em" fill="white" font-family="Arial, sans-serif" font-weight="bold" font-size="32" text-anchor="middle">${char}</text>
+        <text 
+            x="50%" 
+            y="48%" 
+            dy=".32em" 
+            fill="white" 
+            font-family="'Arial Narrow', sans-serif-condensed, Impact, sans-serif" 
+            font-weight="bold" 
+            font-size="32" 
+            text-anchor="middle"
+            transform="scale(0.8, 1.2)"
+            transform-origin="center"
+        >${char}</text>
     </svg>`.trim();
 
     try {
@@ -71,7 +84,8 @@ const SettingsModal: React.FC<SettingsModalProps> = ({
         cardStyle: siteSettings?.cardStyle || 'detailed',
         passwordExpiryDays: siteSettings?.passwordExpiryDays ?? 7,
         enablePinnedSites: siteSettings?.enablePinnedSites ?? false,
-        displayTheme: siteSettings?.displayTheme || 'default'
+        displayTheme: siteSettings?.displayTheme || 'default',
+        faviconApi: siteSettings?.faviconApi || 'https://favicon.im/'
     }));
 
     const [generatedIcons, setGeneratedIcons] = useState<string[]>([]);
@@ -89,10 +103,17 @@ const SettingsModal: React.FC<SettingsModalProps> = ({
 
     const updateGeneratedIcons = (text: string) => {
         const newIcons: string[] = [];
-        for (let i = 0; i < 6; i++) {
-            const c1 = getRandomColor();
-            const h2 = (parseInt(c1.split(',')[0].split('(')[1]) + 30 + Math.random() * 30) % 360;
-            const c2 = `hsl(${h2}, 70%, 50%)`;
+        // 使用固定的步长确保 12 个图标颜色尽可能分散
+        for (let i = 0; i < 12; i++) {
+            // 色相分配：将 20-300 的范围均匀分成 12 份
+            const h = 20 + (i * (280 / 12));
+            const s = 65 + Math.random() * 20;
+            const l = 45 + Math.random() * 15;
+            const c1 = `hsl(${h}, ${s}%, ${l}%)`;
+
+            // 互补或邻近色渐变
+            const h2 = (h + 40 + Math.random() * 40) % 360;
+            const c2 = `hsl(${h2}, 75%, 50%)`;
             newIcons.push(generateSvgIcon(text, c1, c2));
         }
         setGeneratedIcons(newIcons);
@@ -108,7 +129,8 @@ const SettingsModal: React.FC<SettingsModalProps> = ({
                 cardStyle: siteSettings?.cardStyle || 'detailed',
                 passwordExpiryDays: siteSettings?.passwordExpiryDays ?? 7,
                 enablePinnedSites: siteSettings?.enablePinnedSites ?? false,
-                displayTheme: siteSettings?.displayTheme || 'default'
+                displayTheme: siteSettings?.displayTheme || 'default',
+                faviconApi: siteSettings?.faviconApi || 'https://favicon.im/'
             };
             setLocalSiteSettings(safeSettings);
             if (generatedIcons.length === 0) {
@@ -868,7 +890,17 @@ document.addEventListener('DOMContentLoaded', async () => {
                                             className="w-full p-2 rounded-lg border border-slate-300 dark:border-slate-600 dark:bg-slate-700 dark:text-white outline-none focus:ring-2 focus:ring-blue-500"
                                         />
                                     </div>
-
+                                    <div>
+                                        <label className="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-1">图标获取接口 (Favicon API)</label>
+                                        <input
+                                            type="text"
+                                            value={localSiteSettings.faviconApi}
+                                            onChange={(e) => handleSiteChange('faviconApi', e.target.value)}
+                                            placeholder="https://favicon.im/"
+                                            className="w-full p-2 rounded-lg border border-slate-300 dark:border-slate-600 dark:bg-slate-700 dark:text-white outline-none focus:ring-2 focus:ring-blue-500"
+                                        />
+                                        <p className="text-xs text-slate-500 mt-1">用于自动获取链接图标的接口地址，结尾需带 /</p>
+                                    </div>
                                     <div>
                                         <label className="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-1">网站图标 (Favicon URL)</label>
                                         <div className="flex gap-3 items-center">
@@ -894,7 +926,7 @@ document.addEventListener('DOMContentLoaded', async () => {
                                                     <RefreshCw size={12} /> 随机生成
                                                 </button>
                                             </div>
-                                            <div className="flex gap-2">
+                                            <div className="flex gap-2 flex-wrap">
                                                 {generatedIcons.map((icon, idx) => (
                                                     <button
                                                         key={idx}

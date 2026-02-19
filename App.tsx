@@ -104,8 +104,8 @@ function App() {
           passwordExpiryDays: 7,
           enablePinnedSites: false,
           displayTheme: 'default' as DisplayTheme,
-          faviconApi: 'https://favicon.im/',
-          ...parsed
+          ...parsed,
+          faviconApi: parsed.faviconApi || 'https://favicon.im/'
         };
       } catch (e) { }
     }
@@ -641,7 +641,7 @@ function App() {
                 passwordExpiryDays: websiteConfigData.passwordExpiryDays !== undefined ? websiteConfigData.passwordExpiryDays : prev.passwordExpiryDays,
                 enablePinnedSites: websiteConfigData.enablePinnedSites !== undefined ? websiteConfigData.enablePinnedSites : prev.enablePinnedSites,
                 displayTheme: websiteConfigData.displayTheme || prev.displayTheme,
-                faviconApi: websiteConfigData.faviconApi || prev.faviconApi
+                faviconApi: websiteConfigData.faviconApi || prev.faviconApi || 'https://favicon.im/'
               };
 
               // 如果后台配置中缺少 faviconApi，自动进行后台保存
