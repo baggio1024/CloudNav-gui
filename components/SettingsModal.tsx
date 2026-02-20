@@ -673,7 +673,7 @@ document.addEventListener('DOMContentLoaded', async () => {
                 const iconSrc = getFaviconUrl(link.url);
                 html += \`
                     <a href="\${link.url}" target="_blank" class="link-item">
-                        <div class="link-icon"><img src="\${iconSrc}" /></div>
+                        <div class="link-icon"><img src="\${iconSrc}" loading="lazy" /></div>
                         <div class="link-info">
                             <div class="link-title">\${link.title}</div>
                         </div>

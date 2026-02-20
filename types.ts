@@ -9,6 +9,8 @@ export interface LinkItem {
   pinned?: boolean; // New field for pinning
   pinnedOrder?: number; // Field for pinned link sorting order
   order?: number; // 链接在分类中的排序位置
+  visitCount?: number; // 访问次数
+  lastVisitedAt?: number; // 最后访问时间
 }
 
 export interface Category {

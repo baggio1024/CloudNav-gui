@@ -3,7 +3,7 @@ import React, { useState, useEffect, useMemo, useRef } from 'react';
 import {
   Search, Plus, Upload, Moon, Sun, Menu,
   Trash2, Edit2, Loader2, Cloud, CheckCircle2, AlertCircle,
-  Pin, Settings, Lock, CloudCog, Github, GitFork, GripVertical, Save, CheckSquare, LogOut, ExternalLink, X
+  Pin, Settings, Lock, CloudCog, Github, GitFork, GripVertical, Save, CheckSquare, LogOut, ExternalLink, X, TrendingUp
 } from 'lucide-react';
 import {
   DndContext,
@@ -38,6 +38,7 @@ import SettingsModal from './components/SettingsModal';
 import SearchConfigModal from './components/SearchConfigModal';
 import ContextMenu from './components/ContextMenu';
 import QRCodeModal from './components/QRCodeModal';
+import StatsModal from './components/StatsModal';
 
 // --- 配置项 ---
 // 项目核心仓库地址
@@ -227,6 +228,7 @@ function App() {
   const [isImportModalOpen, setIsImportModalOpen] = useState(false);
   const [isSettingsModalOpen, setIsSettingsModalOpen] = useState(false);
   const [isSearchConfigModalOpen, setIsSearchConfigModalOpen] = useState(false);
+  const [isStatsModalOpen, setIsStatsModalOpen] = useState(false);
   const [catAuthModalData, setCatAuthModalData] = useState<Category | null>(null);
 
   const [editingLink, setEditingLink] = useState<LinkItem | undefined>(undefined);
@@ -562,8 +564,13 @@ function App() {
   // --- Effects ---
 
   useEffect(() => {
-    // Theme init
-    if (localStorage.getItem('theme') === 'dark' || (!('theme' in localStorage) && window.matchMedia('(prefers-color-scheme: dark)').matches)) {
+    // Theme init - 默认使用夜间模式
+    const savedTheme = localStorage.getItem('theme');
+    if (savedTheme === 'light') {
+      setDarkMode(false);
+      document.documentElement.classList.remove('dark');
+    } else {
+      // 默认夜间模式
       setDarkMode(true);
       document.documentElement.classList.add('dark');
     }
@@ -1198,6 +1205,21 @@ function App() {
     const updated = links.map(l => l.id === editingLink.id ? { ...l, ...data, url: processedUrl } : l);
     updateData(updated, categories);
     setEditingLink(undefined);
+  };
+
+  // 记录链接访问次数
+  const handleLinkVisit = (linkId: string) => {
+    const updated = links.map(l => {
+      if (l.id === linkId) {
+        return {
+          ...l,
+          visitCount: (l.visitCount || 0) + 1,
+          lastVisitedAt: Date.now()
+        };
+      }
+      return l;
+    });
+    updateData(updated, categories);
   };
 
   // 拖拽结束事件处理函数
@@ -1979,7 +2001,7 @@ function App() {
               <div className={`absolute -inset-[1px] bg-gradient-to-tr ${currentTheme.gradient.from}/30 ${currentTheme.gradient.to}/30 rounded-xl blur-[1px] opacity-0 group-hover:opacity-100 transition-opacity duration-300`} />
               <div className={`relative flex items-center justify-center shrink-0 overflow-hidden w-10 h-10 rounded-xl shadow-sm border border-slate-200/50 dark:border-slate-700/50 ${!link.icon ? `bg-white dark:bg-slate-800 ${currentTheme.iconContainer.textColor} ${currentTheme.iconContainer.darkTextColor} text-lg font-bold uppercase` : ''}`}>
                 {link.icon ? (
-                  <img src={link.icon} alt="" className="w-full h-full object-cover" />
+                  <img src={link.icon} alt="" className="w-full h-full object-cover" loading="lazy" />
                 ) : (
                   link.title.charAt(0)
                 )}
@@ -2035,7 +2057,7 @@ function App() {
                 <div className={`absolute -inset-[1px] bg-gradient-to-tr ${currentTheme.gradient.from}/30 ${currentTheme.gradient.to}/30 rounded-xl blur-[1px] opacity-0 group-hover:opacity-100 transition-opacity duration-300`} />
                 <div className={`relative flex items-center justify-center shrink-0 overflow-hidden w-10 h-10 rounded-xl shadow-sm border border-slate-200/50 dark:border-slate-700/50 ${!link.icon ? `bg-white dark:bg-slate-800 ${currentTheme.iconContainer.textColor} ${currentTheme.iconContainer.darkTextColor} text-lg font-bold uppercase` : ''}`}>
                   {link.icon ? (
-                    <img src={link.icon} alt="" className="w-full h-full object-cover" />
+                    <img src={link.icon} alt="" className="w-full h-full object-cover" loading="lazy" />
                   ) : (
                     link.title.charAt(0)
                   )}
@@ -2061,6 +2083,7 @@ function App() {
             href={link.url}
             target="_blank"
             rel="noopener noreferrer"
+            onClick={() => handleLinkVisit(link.id)}
             className={`flex flex-1 min-w-0 overflow-hidden h-full ${isDetailedView ? 'flex-col' : 'items-center'
               }`}
             title={isDetailedView ? link.url : (link.description || link.url)}
@@ -2073,7 +2096,7 @@ function App() {
                 <div className={`absolute -inset-[1px] bg-gradient-to-tr ${currentTheme.gradient.from}/30 ${currentTheme.gradient.to}/30 rounded-xl blur-[1px] opacity-0 group-hover:opacity-100 transition-opacity duration-300`} />
                 <div className={`relative flex items-center justify-center shrink-0 overflow-hidden w-10 h-10 rounded-xl shadow-sm border border-slate-200/50 dark:border-slate-700/50 ${!link.icon ? `bg-white dark:bg-slate-800 ${currentTheme.iconContainer.textColor} ${currentTheme.iconContainer.darkTextColor} text-lg font-bold uppercase` : ''}`}>
                   {link.icon ? (
-                    <img src={link.icon} alt="" className="w-full h-full object-cover" />
+                    <img src={link.icon} alt="" className="w-full h-full object-cover" loading="lazy" />
                   ) : (
                     link.title.charAt(0)
                   )}
@@ -2234,13 +2257,19 @@ function App() {
                   <Icon name="Compass" size={20} />
                 </div>
               )}
-              <div className="flex flex-col">
-                <span className={`text-xl font-extrabold bg-gradient-to-r ${currentTheme.gradient.from} ${currentTheme.gradient.to} bg-clip-text text-transparent tracking-tight`}>
-                  {siteSettings.navTitle || 'CloudNav'}
-                </span>
-                <span className="text-[10px] text-slate-400 dark:text-slate-500 font-medium uppercase tracking-[0.2em] -mt-1">
-                  Private Navigator
-                </span>
+              <div className="flex flex-col flex-1 min-w-0">
+                <div className="flex items-center gap-2">
+                  <span className={`text-xl font-extrabold bg-gradient-to-r ${currentTheme.gradient.from} ${currentTheme.gradient.to} bg-clip-text text-transparent tracking-tight`}>
+                    {siteSettings.navTitle || 'CloudNav'}
+                  </span>
+                  <button
+                    onClick={() => { if (!authToken) setIsAuthOpen(true); else setIsCatManagerOpen(true); }}
+                    className="p-1 text-slate-400 hover:text-blue-500 hover:bg-slate-100 dark:hover:bg-slate-700 rounded transition-colors"
+                    title="管理分类"
+                  >
+                    <Settings size={14} />
+                  </button>
+                </div>
               </div>
             </div>
 
@@ -2259,16 +2288,7 @@ function App() {
                 </button>
               )}
 
-              <div className="flex items-center justify-between pt-4 pb-2 px-4">
-                <span className="text-xs font-semibold text-slate-400 uppercase tracking-wider">分类目录</span>
-                <button
-                  onClick={() => { if (!authToken) setIsAuthOpen(true); else setIsCatManagerOpen(true); }}
-                  className="p-1 text-slate-400 hover:text-blue-500 hover:bg-slate-100 dark:hover:bg-slate-700 rounded"
-                  title="管理分类"
-                >
-                  <Settings size={14} />
-                </button>
-              </div>
+              <div className="pt-2"></div>
 
               {categories.map(cat => {
                 const isLocked = cat.password && !unlockedCategoryIds.has(cat.id);
@@ -2554,6 +2574,15 @@ function App() {
 
               <div className="flex items-center gap-2">
                 {/* 视图切换控制器 - 移动端：搜索框展开时隐藏，桌面端始终显示 */}
+
+                {/* 访问统计按钮 */}
+                <button 
+                  onClick={() => setIsStatsModalOpen(true)} 
+                  className={`${isMobileSearchOpen ? 'hidden' : 'flex'} lg:flex p-2 rounded-full text-slate-600 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-700`}
+                  title="访问统计"
+                >
+                  <TrendingUp size={18} />
+                </button>
 
                 {/* 主题切换按钮 - 移动端：搜索框展开时隐藏，桌面端始终显示 */}
                 <button onClick={toggleTheme} className={`${isMobileSearchOpen ? 'hidden' : 'flex'} lg:flex p-2 rounded-full text-slate-600 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-700`}>
@@ -2911,6 +2940,15 @@ function App() {
             url={qrCodeModal.url || ''}
             title={qrCodeModal.title || ''}
             onClose={() => setQrCodeModal({ isOpen: false, url: '', title: '' })}
+          />
+
+          {/* 访问统计弹窗 */}
+          <StatsModal
+            isOpen={isStatsModalOpen}
+            onClose={() => setIsStatsModalOpen(false)}
+            links={links}
+            siteSettings={siteSettings}
+            onLinkClick={(link) => handleLinkVisit(link.id)}
           />
         </>
       )}
