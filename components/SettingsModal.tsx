@@ -274,15 +274,15 @@ const SettingsModal: React.FC<SettingsModalProps> = ({
         const json: any = {
             manifest_version: 3,
             name: (localSiteSettings.navTitle || "CloudNav") + " Pro",
-            version: "7.6",
+            version: "9.9",
             minimum_chrome_version: "116",
-            description: "CloudNav - 极速侧边栏与智能收藏",
+            description: "CloudNav - 极速侧边栏与智能收藏，添加新标签页跳转功能",
             permissions: ["activeTab", "scripting", "sidePanel", "storage", "favicon", "contextMenus", "notifications", "tabs"],
             background: {
                 service_worker: "background.js"
             },
             action: {
-                default_title: "打开侧边栏 (Ctrl+Shift+E)"
+                default_title: "打开侧边栏 (Alt+1)"
             },
             side_panel: {
                 default_path: "sidebar.html"
@@ -293,11 +293,14 @@ const SettingsModal: React.FC<SettingsModalProps> = ({
             commands: {
                 "_execute_action": {
                     "suggested_key": {
-                        "default": "Ctrl+Shift+E",
-                        "mac": "Command+Shift+E"
+                        "default": "Alt+1",
+                        "mac": "Alt+1"
                     },
                     "description": "打开/关闭 CloudNav 侧边栏"
                 }
+            },
+            chrome_url_overrides: {
+                "newtab": "newtab.html"
             }
         };
 
@@ -736,6 +739,55 @@ document.addEventListener('DOMContentLoaded', async () => {
     });
 });`;
 
+    const extNewtabHtml = `<html>
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>新标签页</title>
+    <style>
+        /* NOTE: 去除所有默认边距，确保 iframe 全屏覆盖 */
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        html,
+        body {
+            width: 100%;
+            height: 100%;
+            overflow: hidden;
+            background-color: #f5f5f5;
+        }
+
+        iframe {
+            width: 100%;
+            height: 100%;
+            border: none;
+        }
+    </style>
+</head>
+
+<body>
+    <!-- NOTE: 使用 iframe 嵌入导航页面，避免地址栏显示外部 URL -->
+    <iframe id="nav-frame" src="${domain}" allow="clipboard-read; clipboard-write"
+        sandbox="allow-scripts allow-same-origin allow-forms allow-popups allow-popups-to-escape-sandbox allow-top-navigation-by-user-activation"></iframe>
+</body>
+
+</html>`;
+
+    const extNewtabJs = `// NOTE: 不再执行跳转，改为通过 iframe 嵌入导航页面
+// 这样地址栏不会显示外部 URL
+(function () {
+    const defaultUrl = '${domain}';
+    const frame = document.getElementById('nav-frame');
+
+    if (frame) {
+        frame.src = defaultUrl;
+    }
+})();`;
+
     const renderCodeBlock = (filename: string, code: string) => (
         <div className="rounded-lg border border-slate-200 dark:border-slate-700 overflow-hidden shrink-0">
             <div className="flex justify-between items-center bg-slate-50 dark:bg-slate-700/50 px-3 py-2 border-b border-slate-200 dark:border-slate-700">
@@ -825,6 +877,8 @@ document.addEventListener('DOMContentLoaded', async () => {
             zip.file("background.js", extBackgroundJs);
             zip.file("sidebar.html", extSidebarHtml);
             zip.file("sidebar.js", extSidebarJs);
+            zip.file("newtab.html", extNewtabHtml);
+            zip.file("newtab.js", extNewtabJs);
 
             const iconBlob = await generateIconBlob();
             if (iconBlob) {
@@ -1296,6 +1350,14 @@ document.addEventListener('DOMContentLoaded', async () => {
                                         </div>
                                         {renderCodeBlock('sidebar.html', extSidebarHtml)}
                                         {renderCodeBlock('sidebar.js', extSidebarJs)}
+                                    </div>
+
+                                    <div className="space-y-4">
+                                        <div className="flex items-center gap-2 text-sm font-medium text-slate-800 dark:text-slate-200 pt-2 border-t border-slate-100 dark:border-slate-700">
+                                            <Box size={18} className="text-orange-500" /> 新标签页功能 (New Tab)
+                                        </div>
+                                        {renderCodeBlock('newtab.html', extNewtabHtml)}
+                                        {renderCodeBlock('newtab.js', extNewtabJs)}
                                     </div>
                                 </div>
                             </div>
